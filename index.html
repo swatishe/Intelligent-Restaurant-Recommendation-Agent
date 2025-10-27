@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Recommendation Agent</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e57c2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .search-section {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .search-box {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        #queryInput {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1.1em;
+            transition: border-color 0.3s;
+        }
+
+        #queryInput:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        #searchBtn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: bold;
+        }
+
+        #searchBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        #searchBtn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .example-queries {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .example-query {
+            background: #f0f0f0;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .example-query:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .results-section {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        .results-panel, .logs-panel {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .section-title {
+            color: #667eea;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .restaurant-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            position: relative;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .restaurant-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+
+        .rank-badge {
+            position: absolute;
+            top: -15px;
+            left: -15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.5em;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .restaurant-name {
+            font-size: 1.5em;
+            color: #333;
+            margin: 10px 0;
+            padding-left: 10px;
+        }
+
+        .utility-score {
+            background: #51cf66;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: inline-block;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .detail-row {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            color: #666;
+        }
+
+        .detail-icon {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+
+        .constraint-match {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+
+        .match-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            padding: 5px;
+        }
+
+        .match-icon {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+
+        .match-pass {
+            color: #51cf66;
+        }
+
+        .match-fail {
+            color: #ff6b6b;
+        }
+
+        .explanation-section {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .explanation-item {
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+
+        .explanation-item::before {
+            content: "•";
+            color: #667eea;
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-left: -1em;
+        }
+
+        .logs-container {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            margin: 3px 0;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .log-state { color: #00bfff; }
+        .log-nlp { color: #ffd700; }
+        .log-filter { color: #ff6b6b; }
+        .log-rank { color: #51cf66; }
+        .log-system { color: #ff69b4; }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .error-message {
+            background: #ffe0e0;
+            color: #d00;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #d00;
+        }
+
+        .constraints-display {
+            background: #f0f8ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+
+        @media (max-width: 1024px) {
+            .results-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🍽️ Restaurant Recommendation Agent</h1>
+            <p class="subtitle">AI-Powered Search with Constraint Reasoning & Utility Planning</p>
+        </header>
+
+        <div class="search-section">
+            <h2 class="section-title">🔍 Search Restaurants</h2>
+            
+            <div class="search-box">
+                <input 
+                    type="text" 
+                    id="queryInput" 
+                    placeholder="Find a Turkish restaurant in Downtown Baltimore for 2 people under $65 on Thursday at 7:30 pm..."
+                    value="Find a Turkish restaurant in Downtown Baltimore, MD for two people to have dinner under $65 on Thursday night at 7:30 pm with a table for two near a window with a view of the garden or the street."
+                >
+                <button id="searchBtn" onclick="searchRestaurants()">Search</button>
+            </div>
+
+            <div class="example-queries">
+                <strong style="margin-right: 10px;">Examples:</strong>
+                <span class="example-query" onclick="setQuery(this.textContent)">Turkish restaurant in Downtown Baltimore</span>
+                <span class="example-query" onclick="setQuery(this.textContent)">Turkish restaurant for 2 under $50</span>
+                <span class="example-query" onclick="setQuery(this.textContent)">Italian restaurant for 4 people</span>
+                <span class="example-query" onclick="setQuery(this.textContent)">Turkish restaurant on Thursday at 7:30 pm with window view</span>
+            </div>
+
+            <div id="constraintsDisplay"></div>
+        </div>
+
+        <div class="results-section">
+            <div class="results-panel">
+                <h2 class="section-title">🏆 Ranked Results</h2>
+                <div id="resultsContainer">
+                    <div class="no-results">
+                        👆 Enter a query above and click Search to find restaurants
+                    </div>
+                </div>
+            </div>
+
+            <div class="logs-panel">
+                <h2 class="section-title">📝 Agent Logs</h2>
+                <div class="logs-container" id="logsContainer">
+                    <div class="log-entry log-system">Waiting for search query...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function setQuery(text) {
+            document.getElementById('queryInput').value = text;
+        }
+
+        async function searchRestaurants() {
+            const query = document.getElementById('queryInput').value.trim();
+            
+            if (!query) {
+                alert('Please enter a search query');
+                return;
+            }
+
+            // Show loading
+            const resultsContainer = document.getElementById('resultsContainer');
+            const logsContainer = document.getElementById('logsContainer');
+            const searchBtn = document.getElementById('searchBtn');
+            
+            searchBtn.disabled = true;
+            searchBtn.textContent = 'Searching...';
+            
+            resultsContainer.innerHTML = '<div class="loading"><div class="spinner"></div><p>Searching for restaurants...</p></div>';
+            logsContainer.innerHTML = '<div class="log-entry log-system">Starting search...</div>';
+
+            try {
+                // Make API request
+                const response = await fetch('/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query: query })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    resultsContainer.innerHTML = `<div class="error-message">❌ Error: ${data.error}</div>`;
+                    return;
+                }
+
+                // Display constraints
+                const constraintsDiv = document.getElementById('constraintsDisplay');
+                constraintsDiv.innerHTML = `
+                    <div class="constraints-display">
+                        <strong>📋 Extracted Constraints:</strong> ${data.constraints}
+                    </div>
+                `;
+
+                // Display logs
+                displayLogs(data.logs);
+
+                // Display results
+                if (data.results.length === 0) {
+                    resultsContainer.innerHTML = `
+                        <div class="no-results">
+                            <h3>😔 No restaurants found</h3>
+                            <p>Try relaxing your constraints (increase budget, change time, etc.)</p>
+                        </div>
+                    `;
+                } else {
+                    displayResults(data.results);
+                }
+
+            } catch (error) {
+                resultsContainer.innerHTML = `<div class="error-message">❌ Error: ${error.message}</div>`;
+                logsContainer.innerHTML = `<div class="log-entry" style="color: #ff6b6b;">Error: ${error.message}</div>`;
+            } finally {
+                searchBtn.disabled = false;
+                searchBtn.textContent = 'Search';
+            }
+        }
+
+        function displayLogs(logs) {
+            const logsContainer = document.getElementById('logsContainer');
+            logsContainer.innerHTML = '';
+
+            logs.forEach(log => {
+                const logEntry = document.createElement('div');
+                logEntry.className = 'log-entry';
+                
+                // Apply styling based on log type
+                if (log.includes('[STATE]')) logEntry.classList.add('log-state');
+                else if (log.includes('[NLP]')) logEntry.classList.add('log-nlp');
+                else if (log.includes('[FILTER]')) logEntry.classList.add('log-filter');
+                else if (log.includes('[RANK]')) logEntry.classList.add('log-rank');
+                else if (log.includes('[SYSTEM]')) logEntry.classList.add('log-system');
+                
+                logEntry.textContent = log;
+                logsContainer.appendChild(logEntry);
+            });
+
+            // Scroll to bottom
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+        }
+
+        function displayResults(results) {
+            const resultsContainer = document.getElementById('resultsContainer');
+            resultsContainer.innerHTML = '';
+
+            results.forEach((result, index) => {
+                const card = createRestaurantCard(result, index + 1);
+                resultsContainer.appendChild(card);
+            });
+        }
+
+        function createRestaurantCard(restaurant, rank) {
+            const card = document.createElement('div');
+            card.className = 'restaurant-card';
+
+            const rankBadge = document.createElement('div');
+            rankBadge.className = 'rank-badge';
+            rankBadge.textContent = rank;
+
+            const name = document.createElement('div');
+            name.className = 'restaurant-name';
+            name.textContent = restaurant.name;
+
+            const utilityScore = document.createElement('div');
+            utilityScore.className = 'utility-score';
+            utilityScore.textContent = `Utility Score: ${restaurant.utility_score.toFixed(2)}`;
+
+            // Constraint matches
+            const constraintMatch = document.createElement('div');
+            constraintMatch.className = 'constraint-match';
+            constraintMatch.innerHTML = '<strong>Constraint Match:</strong>';
+            
+            restaurant.constraint_matches.forEach(match => {
+                const matchItem = document.createElement('div');
+                matchItem.className = 'match-item';
+                const icon = match.startsWith('✓') ? 'match-pass' : 'match-fail';
+                matchItem.innerHTML = `<span class="match-icon ${icon}">${match.substring(0, 1)}</span><span>${match.substring(2)}</span>`;
+                constraintMatch.appendChild(matchItem);
+            });
+
+            // Details
+            const details = document.createElement('div');
+            details.innerHTML = `
+                <div class="detail-row">
+                    <span class="detail-icon">📍</span>
+                    <span>Location: ${restaurant.location}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-icon">🍽️</span>
+                    <span>Cuisine: ${restaurant.cuisine}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-icon">⭐</span>
+                    <span>Rating: ${restaurant.rating}/5.0</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-icon">💰</span>
+                    <span>Price: ${restaurant.price_per_person}/person</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-icon">🪟</span>
+                    <span>Window Seating: ${restaurant.has_window_seating ? 'Yes' : 'No'}</span>
+                </div>
+                ${restaurant.window_view.length > 0 ? `
+                <div class="detail-row">
+                    <span class="detail-icon">🌆</span>
+                    <span>View: ${restaurant.window_view.join(', ')}</span>
+                </div>
+                ` : ''}
+                <div class="detail-row">
+                    <span class="detail-icon">📏</span>
+                    <span>Distance: ${restaurant.distance_from_center} miles from downtown</span>
+                </div>
+            `;
+
+            // Explanations
+            const explanations = document.createElement('div');
+            explanations.className = 'explanation-section';
+            explanations.innerHTML = '<strong>💡 Ranking Explanation:</strong>';
+            
+            restaurant.explanations.forEach(exp => {
+                const expItem = document.createElement('div');
+                expItem.className = 'explanation-item';
+                expItem.textContent = exp;
+                explanations.appendChild(expItem);
+            });
+
+            card.appendChild(rankBadge);
+            card.appendChild(name);
+            card.appendChild(utilityScore);
+            card.appendChild(constraintMatch);
+            card.appendChild(details);
+            card.appendChild(explanations);
+
+            return card;
+        }
+
+        // Allow Enter key to search
+        document.getElementById('queryInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchRestaurants();
+            }
+        });
+    </script>
+</body>
